@@ -1,6 +1,7 @@
 "use client"
 
 import { FormEvent, useState } from "react"
+import { createClient } from "@/lib/supabase/client";
 
 export default function AuthPage(){
     const [isSignUp, setSignUp] = useState<boolean>(false);
@@ -8,6 +9,7 @@ export default function AuthPage(){
     const [password, setPassword] = useState<string>("");
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string>("");
+    const supabase = createClient();
 
     async function handleAuth(e: React.FormEvent){
         e.preventDefault() // resets or stops everything when refresh is hit
@@ -15,9 +17,21 @@ export default function AuthPage(){
         setError("")
 
         try{
-
-        } catch{
-
+            if (isSignUp){
+                const {data, error} = await supabase.auth.signUp({email, password});
+                if (error) throw error
+                if (data.user && !data.session){
+                    setError("Please check your email for a confirmation link.")
+                    return;
+                }
+            } else{
+                const {error} = await supabase.auth.signInWithPassword({email, password})
+                if (error) throw error;
+            }
+        } catch (error: any){
+            setError(error.message);
+        } finally{
+            setLoading(false);
         }
     }
 
